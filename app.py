@@ -2,55 +2,48 @@
 from flask import Flask, request, jsonify, send_from_directory
 # Importa os per gestire i percorsi dei file
 import os
+# Importa SQLAlchemy dal modulo flask_sqlalchemy
+from flask_sqlalchemy import SQLAlchemy
 
 # Crea un'istanza dell'applicazione Flask
-# Specifichiamo la cartella root dove si trova l'applicazione
 app = Flask(__name__, static_folder='.') # Il punto '.' indica la directory corrente
 
-# Definisci il nome del file dove memorizzare il numero
-NUMBER_FILE = 'number.txt'
+# --- Configurazione del Database ---
+# Definisci l'URI del database. Per SQLite, è 'sqlite:///nome_file.db'
+# __file__ è il percorso dello script corrente, os.path.abspath lo rende assoluto
+# os.path.dirname ottiene la directory dello script
+# os.path.join costruisce il percorso completo al file del database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'site.db')
+# Disabilita il tracciamento delle modifiche, che non è necessario per questo esempio e consuma risorse
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Funzione per leggere il numero dal file
-def read_number():
-    # Controlla se il file esiste
-    if os.path.exists(NUMBER_FILE):
-        try:
-            # Apri il file in modalità lettura ('r')
-            with open(NUMBER_FILE, 'r') as f:
-                # Leggi la prima riga (che dovrebbe contenere il numero)
-                content = f.read().strip()
-                # Prova a convertire il contenuto in un numero intero
-                return int(content) if content else 0 # Restituisce 0 se il file è vuoto
-        except ValueError:
-            # Se la conversione fallisce, significa che il file contiene qualcosa di non numerico
-            print(f"Attenzione: Il file {NUMBER_FILE} contiene un valore non numerico. Verrà usato 0.")
-            return 0
-        except Exception as e:
-            # Gestisce altri possibili errori di lettura
-            print(f"Errore nella lettura del file {NUMBER_FILE}: {e}")
-            return 0
-    else:
-        # Se il file non esiste, restituisce 0 come valore iniziale
-        return 0
+# Crea un'istanza di SQLAlchemy, passandole l'applicazione Flask
+db = SQLAlchemy(app)
 
-# Funzione per scrivere il numero nel file
-def write_number(number):
-    try:
-        # Apri il file in modalità scrittura ('w'). Se il file esiste, viene sovrascritto.
-        with open(NUMBER_FILE, 'w') as f:
-            # Scrivi il numero (convertito in stringa) nel file
-            f.write(str(number))
-    except Exception as e:
-        # Gestisce possibili errori di scrittura
-        print(f"Errore nella scrittura del file {NUMBER_FILE}: {e}")
+# --- Definizione del Modello del Database ---
+# Definisci una classe Python che rappresenta la tabella nel database
+class Number(db.Model):
+    # Definisci il nome della tabella nel database
+    __tablename__ = 'number_storage'
+    # Definisci le colonne della tabella
+    # 'id' è la chiave primaria, autoincrementante
+    id = db.Column(db.Integer, primary_key=True)
+    # 'value' è la colonna dove memorizzeremo il numero, è un intero e non può essere nullo
+    value = db.Column(db.Integer, nullable=False, default=0) # Imposta un valore di default a 0
+
+    # Metodo per rappresentare l'oggetto in modo leggibile (opzionale)
+    def __repr__(self):
+        return f'<Number {self.value}>'
+
+# --- Route e Logica dell'Applicazione ---
 
 # Definisci la route per la homepage (pagina di modifica)
 @app.route('/')
 def index():
     # Questa route serve il file index.html dalla directory corrente
-    return send_from_directory('.', 'index.html') # Il primo '.' indica la directory corrente
+    return send_from_directory('.', 'index.html')
 
-# Definisci la NUOVA route per la pagina di sola visualizzazione
+# Definisci la route per la pagina di sola visualizzazione
 @app.route('/view')
 def view_only():
     # Questa route serve il file view_only.html dalla directory corrente
@@ -59,8 +52,19 @@ def view_only():
 # Definisci la route per ottenere il numero (usata da entrambe le pagine)
 @app.route('/get_number', methods=['GET'])
 def get_number():
-    # Legge il numero dal file
-    current_number = read_number()
+    # Cerca il primo (e unico, in questo caso) record nella tabella Number
+    # Se non esiste, crea un nuovo record con il valore di default (0)
+    current_number_obj = Number.query.first()
+    if not current_number_obj:
+        # Se la tabella è vuota, crea un nuovo oggetto Number
+        new_number_obj = Number(value=0) # Crea un nuovo record con valore 0
+        db.session.add(new_number_obj) # Aggiungi il nuovo record alla sessione del database
+        db.session.commit() # Salva le modifiche nel database
+        current_number = 0 # Il numero corrente è 0
+    else:
+        # Se il record esiste, prendi il suo valore
+        current_number = current_number_obj.value
+
     # Restituisce il numero come risposta JSON
     return jsonify({'number': current_number})
 
@@ -70,24 +74,43 @@ def set_number():
     # Ottiene i dati JSON inviati dal frontend
     data = request.get_json()
     # Estrae il numero dai dati JSON
-    new_number = data.get('number')
+    new_number_value = data.get('number')
 
-    # Controlla se il numero è stato ricevuto e se è un numero intero
-    if new_number is not None and isinstance(new_number, int):
-        # Scrive il nuovo numero nel file
-        write_number(new_number)
+    # Controlla se il valore è un numero valido
+    if new_number_value is not None and isinstance(new_number_value, int):
+        # Cerca il primo (e unico) record del numero
+        number_obj = Number.query.first()
+
+        if number_obj:
+            # Se il record esiste, aggiorna il suo valore
+            number_obj.value = new_number_value
+        else:
+            # Se il record non esiste (non dovrebbe succedere dopo la prima get, ma per sicurezza)
+            # Crea un nuovo record
+            number_obj = Number(value=new_number_value)
+            db.session.add(number_obj) # Aggiungi il nuovo record alla sessione
+
+        # Salva le modifiche nel database
+        db.session.commit()
+
         # Restituisce un messaggio di successo come risposta JSON
-        return jsonify({'message': 'Numero aggiornato con successo!'}), 200
+        return jsonify({'message': 'Numero aggiornato con successo nel database!'}), 200
     else:
         # Se il numero non è valido, restituisce un messaggio di errore
         return jsonify({'error': 'Dati non validi. Si aspettava un numero intero.'}), 400
 
 # Esegui l'applicazione Flask se lo script viene eseguito direttamente
 if __name__ == '__main__':
-    # Crea il file number.txt se non esiste e scrivici 0 come valore iniziale
-    if not os.path.exists(NUMBER_FILE):
-        write_number(0)
-    # Avvia il server Flask in modalità debug (utile per lo sviluppo)
-    # host='0.0.0.0' rende il server accessibile esternamente (se necessario)
-    # port=5000 è la porta di default di Flask
+    # --- Creazione del Database e della Tabella ---
+    # Questo blocco viene eseguito solo quando lo script viene avviato direttamente
+    # Crea il database e le tabelle definite nei modelli, se non esistono già
+    with app.app_context(): # Necessario per usare le funzionalità di Flask-SQLAlchemy fuori dalle richieste
+        db.create_all()
+        # Inizializza il numero se la tabella è vuota
+        if not Number.query.first():
+            initial_number = Number(value=0)
+            db.session.add(initial_number)
+            db.session.commit()
+
+    # Avvia il server Flask in modalità debug
     app.run(debug=True)
