@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numero Condiviso - Modifica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Stile personalizzato per centrare il contenuto */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0; /* Sfondo leggero */
+        }
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Centra il testo all'interno del container */
+        }
+    </style>
+</head>
+<body class="font-sans">
+
+    <div class="container">
+        <h1 class="text-2xl font-bold mb-4">Numero Visualizzato</h1>
+
+        <div id="displayedNumber" class="text-4xl font-mono text-blue-600 mb-6">
+            Caricamento...
+        </div>
+
+        <div class="mb-4">
+            <label for="numberInput" class="block text-sm font-medium text-gray-700 mb-2">Modifica il numero:</label>
+            <input type="number" id="numberInput" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <button id="saveButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Salva Numero
+        </button>
+
+        <div class="mt-6">
+            <a href="/view" class="text-blue-500 hover:underline">Visualizza solo il numero</a>
+        </div>
+    </div>
+
+    <script>
+        // Funzione per recuperare il numero dal backend
+        async function fetchNumber() {
+            try {
+                // Effettua una richiesta GET al backend per ottenere il numero
+                const response = await fetch('/get_number');
+                // Controlla se la risposta è OK (status 200)
+                if (!response.ok) {
+                    throw new Error(`Errore HTTP! stato: ${response.status}`);
+                }
+                // Parsa la risposta JSON
+                const data = await response.json();
+                // Aggiorna l'elemento HTML con il numero ricevuto
+                document.getElementById('displayedNumber').textContent = data.number;
+                // Imposta il valore dell'input field al numero corrente
+                document.getElementById('numberInput').value = data.number;
+            } catch (error) {
+                console.error("Errore nel recuperare il numero:", error);
+                document.getElementById('displayedNumber').textContent = 'Errore nel caricamento';
+            }
+        }
+
+        // Funzione per inviare il nuovo numero al backend
+        async function saveNumber() {
+            // Prendi il valore dall'input field
+            const newNumber = document.getElementById('numberInput').value;
+
+            // Controlla se il valore è un numero valido
+            if (newNumber === "" || isNaN(newNumber)) {
+                alert("Per favore, inserisci un numero valido.");
+                return;
+            }
+
+            try {
+                // Effettua una richiesta POST al backend per salvare il numero
+                const response = await fetch('/set_number', {
+                    method: 'POST', // Specifica il metodo POST
+                    headers: {
+                        'Content-Type': 'application/json' // Indica che stiamo inviando JSON
+                    },
+                    // Converte il numero in un oggetto JSON da inviare
+                    body: JSON.stringify({ number: parseInt(newNumber) }) // Assicurati che sia un numero intero
+                });
+
+                // Controlla se la risposta è OK
+                if (!response.ok) {
+                     throw new Error(`Errore HTTP! stato: ${response.status}`);
+                }
+
+                // Parsa la risposta JSON dal backend (dovrebbe essere un messaggio di successo)
+                const result = await response.json();
+                console.log(result.message); // Stampa il messaggio di successo nella console
+
+                // Aggiorna il numero visualizzato dopo averlo salvato con successo
+                document.getElementById('displayedNumber').textContent = newNumber;
+
+            } catch (error) {
+                console.error("Errore nel salvare il numero:", error);
+                alert("Si è verificato un errore nel salvare il numero.");
+            }
+        }
+
+        // Aggiungi un listener per l'evento click sul bottone
+        document.getElementById('saveButton').addEventListener('click', saveNumber);
+
+        // Recupera il numero iniziale quando la pagina viene caricata
+        window.onload = fetchNumber;
+
+    </script>
+
+</body>
+</html>

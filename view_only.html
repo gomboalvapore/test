@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizza Numero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Stile personalizzato per centrare il contenuto */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0; /* Sfondo leggero */
+        }
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Centra il testo all'interno del container */
+        }
+    </style>
+</head>
+<body class="font-sans">
+
+    <div class="container">
+        <h1 class="text-2xl font-bold mb-4">Numero Visualizzato</h1>
+
+        <div id="displayedNumber" class="text-4xl font-mono text-blue-600 mb-6">
+            Caricamento...
+        </div>
+
+        <div class="mt-6">
+            <a href="/" class="text-blue-500 hover:underline">Torna alla pagina di modifica</a>
+        </div>
+    </div>
+
+    <script>
+        // Funzione per recuperare il numero dal backend
+        async function fetchNumber() {
+            try {
+                // Effettua una richiesta GET al backend per ottenere il numero
+                const response = await fetch('/get_number');
+                // Controlla se la risposta è OK (status 200)
+                if (!response.ok) {
+                    throw new Error(`Errore HTTP! stato: ${response.status}`);
+                }
+                // Parsa la risposta JSON
+                const data = await response.json();
+                // Aggiorna l'elemento HTML con il numero ricevuto
+                document.getElementById('displayedNumber').textContent = data.number;
+            } catch (error) {
+                console.error("Errore nel recuperare il numero:", error);
+                document.getElementById('displayedNumber').textContent = 'Errore nel caricamento';
+            }
+        }
+
+        // Recupera il numero iniziale quando la pagina viene caricata
+        window.onload = fetchNumber;
+
+    </script>
+
+</body>
+</html>
