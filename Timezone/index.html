@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Time Zones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e0e0e0; /* Light gray background */
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.8em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 25px;
+            padding: 25px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid #ccc;
+        }
+
+        .timezone-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            background-color: #f9f9f9;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .timezone-card .label-container {
+            margin-bottom: 15px;
+        }
+
+        .timezone-card .label {
+            font-size: 0.85em;
+            color: #555;
+            line-height: 1.4;
+            margin-bottom: 3px;
+        }
+
+        .timezone-card .label:last-child {
+            margin-bottom: 0;
+        }
+
+        .timezone-card .time {
+            font-size: 3em;
+            font-weight: bold;
+            color: #007bff;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Time Zones</h1>
+    <div class="grid-container">
+        <div class="timezone-card" id="italy">
+            <div class="label-container">
+                <div class="label">Time zone in Italy</div>
+                <div class="label">Fuso orario in Italia</div>
+                <div class="label">التوقيت في إيطاليا</div>
+                <div class="label">이탈리아 시간대</div>
+                <div class="label">イタリアのタイムゾーン</div>
+            </div>
+            <div class="time"></div>
+        </div>
+        <div class="timezone-card" id="uae">
+            <div class="label-container">
+                <div class="label">Time zone in UAE</div>
+                <div class="label">Fuso orario negli Emirati Arabi Uniti</div>
+                <div class="label">التوقيت في الإمارات العربية المتحدة</div>
+                <div class="label">아랍에미리트 시간대</div>
+                <div class="label">アラブ首長国連邦のタイムゾーン</div>
+            </div>
+            <div class="time"></div>
+        </div>
+        <div class="timezone-card" id="korea">
+            <div class="label-container">
+                <div class="label">Time zone in Korea</div>
+                <div class="label">Fuso orario in Corea</div>
+                <div class="label">التوقيت في كوريا</div>
+                <div class="label">한국 시간대</div>
+                <div class="label">韓国のタイムゾーン</div>
+            </div>
+            <div class="time"></div>
+        </div>
+        <div class="timezone-card" id="japan">
+            <div class="label-container">
+                <div class="label">Time zone in Japan</div>
+                <div class="label">Fuso orario in Giappone</div>
+                <div class="label">التوقيت في اليابان</div>
+                <div class="label">일본 시간대</div>
+                <div class="label">日本のタイムゾーン</div>
+            </div>
+            <div class="time"></div>
+        </div>
+    </div>
+
+    <script>
+        function updateTime() {
+            const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+
+            // Italy (Europe/Rome)
+            document.getElementById('italy').querySelector('.time').textContent = new Date().toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', ...options });
+
+            // UAE (Asia/Dubai)
+            document.getElementById('uae').querySelector('.time').textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', ...options });
+
+            // Korea (Asia/Seoul)
+            document.getElementById('korea').querySelector('.time').textContent = new Date().toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', ...options });
+
+            // Japan (Asia/Tokyo)
+            document.getElementById('japan').querySelector('.time').textContent = new Date().toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', ...options });
+        }
+
+        // Update time every second
+        setInterval(updateTime, 1000);
+
+        // Initial update
+        updateTime();
+    </script>
+</body>
+</html>
